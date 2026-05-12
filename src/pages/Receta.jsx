@@ -27,6 +27,7 @@ export default function Receta() {
   const [segundos, setSegundos] = useState(0)
   const [corriendo, setCorriendo] = useState(false)
   const [guardada, setGuardada] = useState(false)
+  const [copiado, setCopiado] = useState(false)
 
   useEffect(() => {
     apiGetReceta(id, user?.id)
@@ -43,6 +44,17 @@ export default function Receta() {
 
   const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`
   const toggleIng = i => setIngChecked(p => p.includes(i) ? p.filter(x=>x!==i) : [...p,i])
+  
+  const handleCompartir = async () => {
+    const enlace = `${window.location.origin}/receta/${id}`
+    try {
+      await navigator.clipboard.writeText(enlace)
+      setCopiado(true)
+      setTimeout(() => setCopiado(false), 2000)
+    } catch (err) {
+      alert('Error al copiar el enlace')
+    }
+  }
 
   if (cargando) return <div className="min-h-screen bg-crema"><Navbar/><div className="flex items-center justify-center h-96 text-gray-400">Cargando receta...</div></div>
   if (error || !receta) return <div className="min-h-screen bg-crema"><Navbar/><div className="flex flex-col items-center justify-center h-96 gap-4"><p className="text-gray-400">{error || 'Receta no encontrada'}</p><button onClick={() => navigate('/home')} className="text-verde text-sm hover:underline">← Volver al inicio</button></div></div>
@@ -118,7 +130,9 @@ export default function Receta() {
           <button onClick={() => setGuardada(!guardada)} className={`w-full rounded-xl py-3 text-sm font-semibold mb-2 transition ${guardada?'bg-verde-suave text-verde':'bg-verde text-white hover:bg-verde-claro'}`}>
             {guardada?'✓ Guardada':'Guardar receta'}
           </button>
-          <button className="w-full border border-gray-200 text-gray-500 rounded-xl py-3 text-sm font-medium hover:bg-gray-50 transition">Compartir</button>
+          <button onClick={handleCompartir} className={`w-full rounded-xl py-3 text-sm font-semibold transition ${copiado?'bg-verde-suave text-verde':'border border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
+            {copiado?'✓ Copiado al portapapeles':'Compartir'}
+          </button>
         </aside>
       </div>
     </div>
