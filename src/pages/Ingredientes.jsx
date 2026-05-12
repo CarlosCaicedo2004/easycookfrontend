@@ -18,12 +18,17 @@ const ingredientesDisponibles = [
 ]
 const categorias = ['Verduras','Proteínas','Lácteos','Granos','Frutas']
 const catIconos = {Verduras:'🥦',Proteínas:'🍗',Lácteos:'🧀',Granos:'🌾',Frutas:'🍋'}
+const COLORES = ['#C8E6C0','#FFF9C4','#FFCCBC','#D1C4E9','#BBDEFB','#F8BBD9','#B2DFDB']
+
+function colorFor(i) { return COLORES[i % COLORES.length] }
 
 export default function Ingredientes() {
   const [seleccionados, setSeleccionados] = useState([])
   const [categoriaActiva, setCategoriaActiva] = useState('Verduras')
   const [busqueda, setBusqueda] = useState('')
   const [cargando, setCargando] = useState(false)
+  const [recetasResultado, setRecetasResultado] = useState([])
+  const [mostrandoResultados, setMostrandoResultados] = useState(false)
   const navigate = useNavigate()
 
   const toggle = id => setSeleccionados(p => p.includes(id)?p.filter(i=>i!==id):[...p,id])
@@ -36,8 +41,8 @@ export default function Ingredientes() {
     try {
       const ingredientesNombres = nombresSeleccionados.map(ing => ing.nombre.toLowerCase())
       const recetas = await apiBuscarPorIngrediente(ingredientesNombres)
-      if (recetas.length > 0) navigate(`/receta/${recetas[0]._id}`)
-      else alert('No encontramos recetas con esos ingredientes. ¡Prueba otros!')
+      setRecetasResultado(Array.isArray(recetas) ? recetas : [])
+      setMostrandoResultados(true)
     } catch { alert('Error al buscar recetas. Verifica que el backend esté corriendo.') }
     finally { setCargando(false) }
   }
@@ -84,6 +89,41 @@ export default function Ingredientes() {
           {cargando?'Buscando...':'Encontrar recetas →'}
         </button>
       </div>
+
+      {mostrandoResultados && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[80vh] overflow-y-auto p-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-carbon">Recetas encontradas ({recetasResultado.length})</h2>
+              <button onClick={() => setMostrandoResultados(false)} className="text-gray-400 hover:text-gray-600 text-3xl font-bold">×</button>
+            </div>
+            
+            {cargando ? (
+              <div className="text-center py-12">
+                <p className="text-gray-400">Buscando...</p>
+              </div>
+            ) : recetasResultado.length === 0 ? (
+              <p className="text-gray-400 text-center py-12">No encontramos recetas con esos ingredientes. ¡Prueba otros!</p>
+            ) : (
+              <div className="grid grid-cols-3 gap-4">
+                {recetasResultado.map((r, i) => (
+                  <button key={r._id} onClick={() => { navigate(`/receta/${r._id}`); setMostrandoResultados(false); }} className="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all text-left">
+                    <div className="h-28 flex items-center justify-center text-5xl" style={{background: colorFor(i)}}>🍽</div>
+                    <div className="p-4">
+                      <h3 className="font-semibold text-carbon text-sm mb-2 line-clamp-2">{r.nombre}</h3>
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-xs text-gray-500">{r.tipo}</span>
+                        <span className="bg-verde-suave text-verde text-[10px] font-medium px-2.5 py-1 rounded-full">⏱ {r.tiempo_preparacion} min</span>
+                      </div>
+                      <p className="text-xs text-gray-400">{r.ingredientes?.length || 0} ingredientes</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
