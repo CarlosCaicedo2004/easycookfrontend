@@ -79,8 +79,10 @@ export const apiEliminarReceta = (id) =>
     headers: headers(true),
   }).then(handle)
 
-export const apiBuscarPorIngrediente = (ing) =>
-  fetch(`${BASE_URL}/recetas/ingrediente/${ing}`).then(handle)
+export const apiBuscarPorIngrediente = (ingredientes) => {
+  const ings = Array.isArray(ingredientes) ? ingredientes.join(',') : ingredientes
+  return fetch(`${BASE_URL}/recetas/ingrediente/${ings}`).then(handle)
+}
 
 export const apiBuscarPorTiempo = (tiempo) =>
   fetch(`${BASE_URL}/recetas/tiempo/${tiempo}`).then(handle)

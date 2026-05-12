@@ -34,8 +34,8 @@ export default function Ingredientes() {
     if (seleccionados.length === 0) return
     setCargando(true)
     try {
-      const primerIngrediente = nombresSeleccionados[0].nombre.toLowerCase()
-      const recetas = await apiBuscarPorIngrediente(primerIngrediente)
+      const ingredientesNombres = nombresSeleccionados.map(ing => ing.nombre.toLowerCase())
+      const recetas = await apiBuscarPorIngrediente(ingredientesNombres)
       if (recetas.length > 0) navigate(`/receta/${recetas[0]._id}`)
       else alert('No encontramos recetas con esos ingredientes. ¡Prueba otros!')
     } catch { alert('Error al buscar recetas. Verifica que el backend esté corriendo.') }
