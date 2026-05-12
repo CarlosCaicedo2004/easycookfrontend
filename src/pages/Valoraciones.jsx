@@ -32,13 +32,28 @@ export default function Valoraciones() {
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
   const [enviando, setEnviando] = useState(false)
+  const [miValoracion, setMiValoracion] = useState(null) // Detectar si ya valoró
 
   useEffect(() => {
     Promise.all([apiGetReceta(id), apiGetValoracionesPorReceta(id)])
-      .then(([r, v]) => { setReceta(r); setValoraciones(Array.isArray(v)?v:[]) })
+      .then(([r, v]) => { 
+        setReceta(r)
+        const vals = Array.isArray(v) ? v : []
+        setValoraciones(vals)
+        
+        // Detectar si el usuario actual ya tiene una valoración
+        if (user) {
+          const miVal = vals.find(val => val.usuario_id?._id === user.id || val.usuario_id === user.id)
+          if (miVal) {
+            setMiValoracion(miVal)
+            setMiRating(miVal.puntuacion)
+            setMiTexto(miVal.comentario)
+          }
+        }
+      })
       .catch(err => setError(err.message))
       .finally(() => setCargando(false))
-  }, [id])
+  }, [id, user])
 
   const promedio = valoraciones.length ? (valoraciones.reduce((a,v)=>a+v.puntuacion,0)/valoraciones.length).toFixed(1) : '—'
 
@@ -47,10 +62,18 @@ export default function Valoraciones() {
     setEnviando(true)
     try {
       const nueva = await apiCrearValoracion(id, miRating, miTexto)
-      setValoraciones(prev => [nueva, ...prev])
+      
+      if (miValoracion) {
+        // Actualizar la valoración existente en la lista
+        setValoraciones(prev => prev.map(v => v._id === nueva._id ? nueva : v))
+      } else {
+        // Agregar nueva valoración
+        setValoraciones(prev => [nueva, ...prev])
+      }
+      
       setEnviado(true)
-      setMiTexto('')
-      setMiRating(0)
+      setMiValoracion(nueva)
+      setTimeout(() => setEnviado(false), 2000)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -109,19 +132,20 @@ export default function Valoraciones() {
             ) : enviado ? (
               <div className="flex flex-col items-center justify-center h-full gap-3">
                 <div className="text-4xl">🎉</div>
-                <p className="font-semibold text-carbon">¡Gracias por tu reseña!</p>
-                <button onClick={() => setEnviado(false)} className="text-sm text-verde font-medium hover:underline">Escribir otra reseña</button>
+                <p className="font-semibold text-carbon">¡{miValoracion ? 'Reseña actualizada!' : 'Gracias por tu reseña!'}</p>
+                <button onClick={() => { setEnviado(false); setMiRating(0); setMiTexto(''); setMiValoracion(null) }} className="text-sm text-verde font-medium hover:underline">Escribir otra reseña</button>
               </div>
             ) : (
               <>
-                <p className="text-sm font-semibold text-carbon mb-3">Deja tu opinión</p>
+                <p className="text-sm font-semibold text-carbon mb-3">{miValoracion ? '✏️ Edita tu opinión' : 'Deja tu opinión'}</p>
+                {miValoracion && <p className="text-xs text-green-600 bg-green-50 px-3 py-1 rounded-lg mb-3 inline-block">Ya valoraste esta receta</p>}
                 <div className="mb-4">
                   <Estrellas valor={miRating} onChange={setMiRating}/>
                   {miRating>0&&<p className="text-xs text-gray-400 mt-1">{['','Muy mala','Mala','Regular','Buena','Excelente'][miRating]}</p>}
                 </div>
                 <textarea value={miTexto} onChange={e=>setMiTexto(e.target.value)} placeholder="Cuéntanos cómo te quedó la receta..." rows={3} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-carbon bg-gray-50 outline-none focus:border-verde resize-none transition"/>
                 <button onClick={enviarResena} disabled={!miRating||!miTexto.trim()||enviando} className="mt-3 bg-verde text-white rounded-xl px-6 py-2.5 text-sm font-semibold hover:bg-verde-claro transition disabled:opacity-40">
-                  {enviando?'Enviando...':'Publicar reseña'}
+                  {enviando ? 'Enviando...' : miValoracion ? '✏️ Actualizar reseña' : 'Publicar reseña'}
                 </button>
               </>
             )}
@@ -132,21 +156,27 @@ export default function Valoraciones() {
         <div className="flex flex-col gap-4 mb-14">
           {valoraciones.length === 0 ? (
             <p className="text-gray-400 text-sm text-center py-8">Sé el primero en valorar esta receta.</p>
-          ) : valoraciones.map((c, idx) => (
-            <div key={c._id||idx} className="bg-white rounded-2xl border border-gray-100 p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{background:colorFor(c.usuario_id?.nombre||'')}}>
-                  {(c.usuario_id?.nombre||'U').slice(0,2).toUpperCase()}
+          ) : valoraciones.map((c, idx) => {
+            const esElMio = user && (c.usuario_id?._id === user.id || c.usuario_id === user.id)
+            return (
+              <div key={c._id||idx} className={`rounded-2xl border p-6 transition ${esElMio ? 'bg-green-50 border-green-200' : 'bg-white border-gray-100'}`}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{background:colorFor(c.usuario_id?.nombre||'')}}>
+                    {(c.usuario_id?.nombre||'U').slice(0,2).toUpperCase()}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-carbon">{c.usuario_id?.nombre||'Usuario'}</p>
+                      {esElMio && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">Tu reseña</span>}
+                    </div>
+                    <div className="flex gap-0.5">{[1,2,3,4,5].map(i=><span key={i} className={`text-sm ${i<=c.puntuacion?'text-dorado':'text-gray-200'}`}>★</span>)}</div>
+                  </div>
+                  <span className="text-xs text-gray-300">{new Date(c.createdAt||Date.now()).toLocaleDateString('es-CO')}</span>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-carbon">{c.usuario_id?.nombre||'Usuario'}</p>
-                  <div className="flex gap-0.5">{[1,2,3,4,5].map(i=><span key={i} className={`text-sm ${i<=c.puntuacion?'text-dorado':'text-gray-200'}`}>★</span>)}</div>
-                </div>
-                <span className="ml-auto text-xs text-gray-300">{new Date(c.createdAt||Date.now()).toLocaleDateString('es-CO')}</span>
+                <p className="text-sm text-gray-500 leading-relaxed">{c.comentario}</p>
               </div>
-              <p className="text-sm text-gray-500 leading-relaxed">{c.comentario}</p>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         <div className="mt-6 flex justify-center">
