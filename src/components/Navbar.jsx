@@ -5,8 +5,7 @@ import { apiLogout } from '../services/api'
 const links = [
   {label:'Inicio',to:'/home'},
   {label:'Mis recetas',to:'/agregar-receta'},
-  {label:'Favoritos',to:'/home'},
-  {label:'Comunidad',to:'/home'},
+  {label:'Historial',to:'/history'}
 ]
 
 export default function Navbar() {
