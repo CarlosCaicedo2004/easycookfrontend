@@ -9,7 +9,7 @@ const tipos = ['Desayuno','Almuerzo','Cena','Snack','Postre','Bebida']
 export default function AgregarReceta() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [form, setForm] = useState({ nombre:'', tipo:'Desayuno', tiempo_preparacion:'', descripcion:'', porciones:'' })
+  const [form, setForm] = useState({ nombre:'', tipo:'Desayuno', tiempo_preparacion:''})
   const [ingredientes, setIngredientes] = useState(['',''])
   const [pasos, setPasos] = useState(['',''])
   const [enviado, setEnviado] = useState(false)
@@ -32,7 +32,6 @@ export default function AgregarReceta() {
         tiempo_preparacion: Number(form.tiempo_preparacion),
         ingredientes: ingredientes.filter(Boolean),
         pasos: pasos.filter(Boolean),
-        descripcion: form.descripcion,
         porciones: Number(form.porciones) || 2,
       })
       setEnviado(true)
@@ -83,14 +82,10 @@ export default function AgregarReceta() {
             <input value={form.nombre} onChange={e=>setF('nombre',e.target.value)} placeholder="Ej: Ajiaco bogotano" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white outline-none focus:border-verde focus:ring-2 focus:ring-verde/10 transition"/>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mb-5">
+          <div className="mb-5">
             <div>
               <label className="text-xs font-medium text-gray-500 mb-1.5 block">Tiempo (minutos) <span className="text-naranja">*</span></label>
               <input type="number" value={form.tiempo_preparacion} onChange={e=>setF('tiempo_preparacion',e.target.value)} placeholder="Ej: 30" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white outline-none focus:border-verde focus:ring-2 focus:ring-verde/10 transition"/>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500 mb-1.5 block">Porciones</label>
-              <input type="number" value={form.porciones} onChange={e=>setF('porciones',e.target.value)} placeholder="Ej: 4" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white outline-none focus:border-verde focus:ring-2 focus:ring-verde/10 transition"/>
             </div>
           </div>
 
@@ -99,11 +94,6 @@ export default function AgregarReceta() {
             <select value={form.tipo} onChange={e=>setF('tipo',e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white outline-none focus:border-verde transition">
               {tipos.map(t=><option key={t}>{t}</option>)}
             </select>
-          </div>
-
-          <div className="mb-5">
-            <label className="text-xs font-medium text-gray-500 mb-1.5 block">Descripción</label>
-            <textarea value={form.descripcion} onChange={e=>setF('descripcion',e.target.value)} rows={2} placeholder="Describe brevemente tu receta..." className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white outline-none focus:border-verde resize-none transition"/>
           </div>
 
           <div className="h-px bg-gray-100 my-6"/>

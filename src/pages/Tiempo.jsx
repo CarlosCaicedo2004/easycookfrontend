@@ -1,16 +1,34 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import { apiBuscarPorTiempo } from '../services/api'
 
 const opciones = [10, 15, 30, 45, 60, 90]
 
 export default function Tiempo() {
   const [minutos, setMinutos] = useState(30)
+  const [cargando, setCargando] = useState(false)
   const navigate = useNavigate()
 
   const porcentaje = Math.round((minutos / 90) * 100)
   const circunferencia = 2 * Math.PI * 80
   const offset = circunferencia - (porcentaje / 100) * circunferencia
+
+  const buscarRecetas = async () => {
+    setCargando(true)
+    try {
+      const recetas = await apiBuscarPorTiempo(minutos)
+      if (recetas.length > 0) {
+        navigate(`/receta/${recetas[0]._id}`)
+      } else {
+        alert('No encontramos recetas para ese tiempo. ¡Prueba con más minutos!')
+      }
+    } catch (err) {
+      alert('Error al buscar recetas. Verifica que el backend esté corriendo.')
+    } finally {
+      setCargando(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-crema">
@@ -82,10 +100,11 @@ export default function Tiempo() {
         </div>
 
         <button
-          onClick={() => navigate('/ingredientes')}
-          className="bg-verde text-white rounded-xl px-14 py-4 text-sm font-semibold hover:bg-verde-claro transition"
+          onClick={buscarRecetas}
+          disabled={cargando}
+          className="bg-verde text-white rounded-xl px-14 py-4 text-sm font-semibold hover:bg-verde-claro transition disabled:opacity-60"
         >
-          Continuar →
+          {cargando ? 'Buscando...' : 'Continuar →'}
         </button>
 
         <p className="text-xs text-gray-300 mt-5">

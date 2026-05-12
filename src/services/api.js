@@ -100,7 +100,7 @@ export const apiGetValoraciones = () =>
   fetch(`${BASE_URL}/valoraciones`).then(handle)
 
 export const apiGetValoracionesPorReceta = (recetaId) =>
-  fetch(`${BASE_URL}/valoraciones/${recetaId}`).then(handle)
+  fetch(`${BASE_URL}/valoraciones/receta/${recetaId}`).then(handle)
 
 export const apiCrearValoracion = (receta_id, puntuacion, comentario) =>
   fetch(`${BASE_URL}/valoraciones`, {
